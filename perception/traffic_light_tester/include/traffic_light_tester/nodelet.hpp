@@ -44,10 +44,10 @@
 
 namespace traffic_light
 {
-class TrafficLightClassifierNodelet : public rclcpp::Node
+class TrafficLightTesterNodelet : public rclcpp::Node
 {
 public:
-  explicit TrafficLightClassifierNodelet(const rclcpp::NodeOptions & options);
+  explicit TrafficLightTesterNodelet(const rclcpp::NodeOptions & options);
   void imageRoiCallback(
     const sensor_msgs::msg::Image::ConstSharedPtr & input_image_msg,
     const autoware_auto_perception_msgs::msg::TrafficLightRoiArray::ConstSharedPtr &

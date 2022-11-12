@@ -31,7 +31,7 @@ target_link_libraries(traffic_light_tester_nodelet
   ${OpenCV_LIBRARIES}
 )
 rclcpp_components_register_node(traffic_light_tester_nodelet
-  PLUGIN "traffic_light::TrafficLightClassifierNodelet"
+  PLUGIN "traffic_light::TrafficLightTesterNodelet"
   EXECUTABLE traffic_light_tester_node
 )
 

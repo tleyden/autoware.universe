@@ -20,7 +20,7 @@
 
 namespace traffic_light
 {
-TrafficLightClassifierNodelet::TrafficLightClassifierNodelet(const rclcpp::NodeOptions & options)
+TrafficLightTesterNodelet::TrafficLightTesterNodelet(const rclcpp::NodeOptions & options)
 : Node("traffic_light_tester_node", options)
 {
   using std::placeholders::_1;
@@ -31,11 +31,11 @@ TrafficLightClassifierNodelet::TrafficLightClassifierNodelet(const rclcpp::NodeO
   if (is_approximate_sync_) {
     approximate_sync_.reset(new ApproximateSync(ApproximateSyncPolicy(10), image_sub_, roi_sub_));
     approximate_sync_->registerCallback(
-      std::bind(&TrafficLightClassifierNodelet::imageRoiCallback, this, _1, _2));
+      std::bind(&TrafficLightTesterNodelet::imageRoiCallback, this, _1, _2));
   } else {
     sync_.reset(new Sync(SyncPolicy(10), image_sub_, roi_sub_));
     sync_->registerCallback(
-      std::bind(&TrafficLightClassifierNodelet::imageRoiCallback, this, _1, _2));
+      std::bind(&TrafficLightTesterNodelet::imageRoiCallback, this, _1, _2));
   }
 
   traffic_signal_array_pub_ =
@@ -44,13 +44,13 @@ TrafficLightClassifierNodelet::TrafficLightClassifierNodelet(const rclcpp::NodeO
 
   using std::chrono_literals::operator""ms;
   timer_ = rclcpp::create_timer(
-    this, get_clock(), 100ms, std::bind(&TrafficLightClassifierNodelet::connectCb, this));
+    this, get_clock(), 100ms, std::bind(&TrafficLightTesterNodelet::connectCb, this));
 
   int classifier_type = this->declare_parameter(
-    "classifier_type", static_cast<int>(TrafficLightClassifierNodelet::ClassifierType::HSVFilter));
-  if (classifier_type == TrafficLightClassifierNodelet::ClassifierType::HSVFilter) {
+    "classifier_type", static_cast<int>(TrafficLightTesterNodelet::ClassifierType::HSVFilter));
+  if (classifier_type == TrafficLightTesterNodelet::ClassifierType::HSVFilter) {
     RCLCPP_INFO(this->get_logger(), "Create basic color classifier");
-  } else if (classifier_type == TrafficLightClassifierNodelet::ClassifierType::CNN) {
+  } else if (classifier_type == TrafficLightTesterNodelet::ClassifierType::CNN) {
 #if ENABLE_GPU
     RCLCPP_INFO(this->get_logger(), "Create cnn classifier");
 #else
@@ -60,7 +60,7 @@ TrafficLightClassifierNodelet::TrafficLightClassifierNodelet(const rclcpp::NodeO
   }
 }
 
-void TrafficLightClassifierNodelet::connectCb()
+void TrafficLightTesterNodelet::connectCb()
 {
   // set callbacks only when there are subscribers to this node
   if (
@@ -76,7 +76,7 @@ void TrafficLightClassifierNodelet::connectCb()
   }
 }
 
-void TrafficLightClassifierNodelet::imageRoiCallback(
+void TrafficLightTesterNodelet::imageRoiCallback(
   const sensor_msgs::msg::Image::ConstSharedPtr & input_image_msg,
   const autoware_auto_perception_msgs::msg::TrafficLightRoiArray::ConstSharedPtr & input_rois_msg)
 {
@@ -118,4 +118,4 @@ void TrafficLightClassifierNodelet::imageRoiCallback(
 
 #include <rclcpp_components/register_node_macro.hpp>
 
-RCLCPP_COMPONENTS_REGISTER_NODE(traffic_light::TrafficLightClassifierNodelet)
+RCLCPP_COMPONENTS_REGISTER_NODE(traffic_light::TrafficLightTesterNodelet)
