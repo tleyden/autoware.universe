@@ -38,11 +38,6 @@
 #include <memory>
 #include <mutex>
 
-#if ENABLE_GPU
-#include "traffic_light_tester/cnn_classifier.hpp"
-#endif
-
-#include "traffic_light_tester/color_classifier.hpp"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>

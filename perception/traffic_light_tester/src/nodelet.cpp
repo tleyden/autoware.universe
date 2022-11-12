@@ -50,11 +50,9 @@ TrafficLightClassifierNodelet::TrafficLightClassifierNodelet(const rclcpp::NodeO
     "classifier_type", static_cast<int>(TrafficLightClassifierNodelet::ClassifierType::HSVFilter));
   if (classifier_type == TrafficLightClassifierNodelet::ClassifierType::HSVFilter) {
     RCLCPP_INFO(this->get_logger(), "Create basic color classifier");
-    classifier_ptr_ = std::make_shared<ColorClassifier>(this);
   } else if (classifier_type == TrafficLightClassifierNodelet::ClassifierType::CNN) {
 #if ENABLE_GPU
     RCLCPP_INFO(this->get_logger(), "Create cnn classifier");
-    classifier_ptr_ = std::make_shared<CNNClassifier>(this);
 #else
     RCLCPP_ERROR(
       this->get_logger(), "please install CUDA, CUDNN and TensorRT to use cnn classifier");
