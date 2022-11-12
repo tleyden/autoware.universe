@@ -25,6 +25,8 @@ TrafficLightClassifierNodelet::TrafficLightClassifierNodelet(const rclcpp::NodeO
 {
   using std::placeholders::_1;
   using std::placeholders::_2;
+  
+  RCLCPP_INFO(this->get_logger(), "Create traffic ligth classifier node");
   is_approximate_sync_ = this->declare_parameter("approximate_sync", false);
   if (is_approximate_sync_) {
     approximate_sync_.reset(new ApproximateSync(ApproximateSyncPolicy(10), image_sub_, roi_sub_));
@@ -47,9 +49,11 @@ TrafficLightClassifierNodelet::TrafficLightClassifierNodelet(const rclcpp::NodeO
   int classifier_type = this->declare_parameter(
     "classifier_type", static_cast<int>(TrafficLightClassifierNodelet::ClassifierType::HSVFilter));
   if (classifier_type == TrafficLightClassifierNodelet::ClassifierType::HSVFilter) {
+    RCLCPP_INFO(this->get_logger(), "Create basic color classifier");
     classifier_ptr_ = std::make_shared<ColorClassifier>(this);
   } else if (classifier_type == TrafficLightClassifierNodelet::ClassifierType::CNN) {
 #if ENABLE_GPU
+    RCLCPP_INFO(this->get_logger(), "Create cnn classifier");
     classifier_ptr_ = std::make_shared<CNNClassifier>(this);
 #else
     RCLCPP_ERROR(
@@ -66,7 +70,9 @@ void TrafficLightClassifierNodelet::connectCb()
     traffic_signal_array_pub_->get_intra_process_subscription_count() == 0) {
     image_sub_.unsubscribe();
     roi_sub_.unsubscribe();
+    RCLCPP_INFO(this->get_logger(), "Not subscribing to any upstream topics, nobody subscribed to us");
   } else if (!image_sub_.getSubscriber()) {
+    RCLCPP_INFO(this->get_logger(), "Subscribing to any upstream topics, we have a subscriber");
     image_sub_.subscribe(this, "~/input/image", "raw", rmw_qos_profile_sensor_data);
     roi_sub_.subscribe(this, "~/input/rois", rclcpp::QoS{1}.get_rmw_qos_profile());
   }
@@ -76,6 +82,7 @@ void TrafficLightClassifierNodelet::imageRoiCallback(
   const sensor_msgs::msg::Image::ConstSharedPtr & input_image_msg,
   const autoware_auto_perception_msgs::msg::TrafficLightRoiArray::ConstSharedPtr & input_rois_msg)
 {
+  RCLCPP_INFO(this->get_logger(), "imageRoiCallback invoked");
   if (classifier_ptr_.use_count() == 0) {
     return;
   }

@@ -27,6 +27,9 @@ namespace traffic_light
 {
 CNNClassifier::CNNClassifier(rclcpp::Node * node_ptr) : node_ptr_(node_ptr)
 {
+
+  RCLCPP_INFO(node_ptr_->get_logger(), "CNNClassifier ctor");
+
   image_pub_ = image_transport::create_publisher(
     node_ptr_, "~/output/debug/image", rclcpp::QoS{1}.get_rmw_qos_profile());
 
