@@ -64,29 +64,11 @@ TrafficLightTesterNodelet::TrafficLightTesterNodelet(const rclcpp::NodeOptions &
     this->create_publisher<autoware_auto_perception_msgs::msg::TrafficSignalArray>(
       "~/output/traffic_signals", rclcpp::QoS{1});
 
-/**
- * template<
-  typename MessageT,
-  typename CallbackT,
-  typename AllocatorT,
-  typename CallbackMessageT,
-  typename SubscriptionT,
-  typename MessageMemoryStrategyT>
-std::shared_ptr<SubscriptionT>
-Node::create_subscription(
-  const std::string & topic_name,
-  const rclcpp::QoS & qos,
-  CallbackT && callback,
-  const SubscriptionOptionsWithAllocator<AllocatorT> & options,
-  typename MessageMemoryStrategyT::SharedPtr msg_mem_strat)
-{
-*/
-
-//   sub_rtc_status_ = raw_node_->create_subscription<CooperateStatusArray>(
-//    "/api/external/get/rtc_status", 1, std::bind(&RTCManagerPanel::onRTCStatus, this, _1));
-
   traffic_signal_array_sub_ = this->create_subscription<autoware_auto_perception_msgs::msg::TrafficSignalArray>(
-      "~/input/traffic_signals", rclcpp::QoS{1}, std::bind(&TrafficLightTesterNodelet::onTrafficSignalArray, this, _1));
+      "~/input/traffic_signals", 
+      rclcpp::QoS{1}, 
+      std::bind(&TrafficLightTesterNodelet::onTrafficSignalArray, this, _1)
+  );
 
   using std::chrono_literals::operator""ms;
   timer_ = rclcpp::create_timer(
@@ -121,18 +103,25 @@ void TrafficLightTesterNodelet::connectCb()
 
   std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-  // set callbacks only when there are subscribers to this node
-  if (
-    traffic_signal_array_pub_->get_subscription_count() == 0 &&
-    traffic_signal_array_pub_->get_intra_process_subscription_count() == 0) {
-    image_sub_.unsubscribe();
-    roi_sub_.unsubscribe();
-    // RCLCPP_INFO(this->get_logger(), "Not subscribing to any upstream topics, nobody subscribed to us.");
-  } else if (!image_sub_.getSubscriber()) {
-    // RCLCPP_INFO(this->get_logger(), "Subscribing to any upstream topics, we have a subscriber.");
-    image_sub_.subscribe(this, "~/input/image", "raw", rmw_qos_profile_sensor_data);
-    roi_sub_.subscribe(this, "~/input/rois", rclcpp::QoS{1}.get_rmw_qos_profile());
-  }
+  // Every timer callback, publish an empty traffic signal
+  autoware_auto_perception_msgs::msg::TrafficSignalArray output_msg;
+  autoware_auto_perception_msgs::msg::TrafficSignal traffic_signal;
+  output_msg.signals.push_back(traffic_signal);
+  traffic_signal_array_pub_->publish(output_msg);
+
+
+  // // set callbacks only when there are subscribers to this node
+  // if (
+  //   traffic_signal_array_pub_->get_subscription_count() == 0 &&
+  //   traffic_signal_array_pub_->get_intra_process_subscription_count() == 0) {
+  //   image_sub_.unsubscribe();
+  //   roi_sub_.unsubscribe();
+  //   // RCLCPP_INFO(this->get_logger(), "Not subscribing to any upstream topics, nobody subscribed to us.");
+  // } else if (!image_sub_.getSubscriber()) {
+  //   // RCLCPP_INFO(this->get_logger(), "Subscribing to any upstream topics, we have a subscriber.");
+  //   image_sub_.subscribe(this, "~/input/image", "raw", rmw_qos_profile_sensor_data);
+  //   roi_sub_.subscribe(this, "~/input/rois", rclcpp::QoS{1}.get_rmw_qos_profile());
+  // }
 }
 
 void TrafficLightTesterNodelet::imageRoiCallback(
