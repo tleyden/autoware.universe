@@ -77,6 +77,9 @@ private:
   rclcpp::Publisher<autoware_auto_perception_msgs::msg::TrafficSignalArray>::SharedPtr
     traffic_signal_array_pub_;
   std::shared_ptr<ClassifierInterface> classifier_ptr_;
+
+  int timer_callback_count;
+
 };
 
 }  // namespace traffic_light

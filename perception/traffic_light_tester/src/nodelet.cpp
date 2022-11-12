@@ -17,6 +17,24 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include <thread>
+#include <chrono>
+
+/**
+ * This is a helper thing to test out how well the traffic light cnn detector
+ * works on real-world data.  
+ * 
+ * On each timer callback (I didn't want to block the main thread in the ctor in case that causes issues), do the following:
+ * 
+ * 1. Find the tick number (eg, 1)
+ * 2. Read the corresponding ROIs from the 1_rois.yaml file
+ * 3. Read the corresponding image from the 1_image.png file
+ * 4. Publish rois message to topic
+ * 5. Publish image to topic
+ * 6. Dump anything received from the subscriber for the traffic light state
+ * 7. If there are no corresponding files, just print a "done message" so the user can kill the node
+ * 
+*/
 
 namespace traffic_light
 {
@@ -25,7 +43,11 @@ TrafficLightTesterNodelet::TrafficLightTesterNodelet(const rclcpp::NodeOptions &
 {
   using std::placeholders::_1;
   using std::placeholders::_2;
-  
+  // using namespace std::chrono_literals;
+
+
+  timer_callback_count = 0;
+
   RCLCPP_INFO(this->get_logger(), "Create traffic ligth classifier node");
   is_approximate_sync_ = this->declare_parameter("approximate_sync", false);
   if (is_approximate_sync_) {
@@ -62,15 +84,21 @@ TrafficLightTesterNodelet::TrafficLightTesterNodelet(const rclcpp::NodeOptions &
 
 void TrafficLightTesterNodelet::connectCb()
 {
+
+  RCLCPP_INFO(this->get_logger(), "timer_callback_count:: %d", timer_callback_count);
+  timer_callback_count += 1;
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
   // set callbacks only when there are subscribers to this node
   if (
     traffic_signal_array_pub_->get_subscription_count() == 0 &&
     traffic_signal_array_pub_->get_intra_process_subscription_count() == 0) {
     image_sub_.unsubscribe();
     roi_sub_.unsubscribe();
-    RCLCPP_INFO(this->get_logger(), "Not subscribing to any upstream topics, nobody subscribed to us");
+    // RCLCPP_INFO(this->get_logger(), "Not subscribing to any upstream topics, nobody subscribed to us.");
   } else if (!image_sub_.getSubscriber()) {
-    RCLCPP_INFO(this->get_logger(), "Subscribing to any upstream topics, we have a subscriber");
+    // RCLCPP_INFO(this->get_logger(), "Subscribing to any upstream topics, we have a subscriber.");
     image_sub_.subscribe(this, "~/input/image", "raw", rmw_qos_profile_sensor_data);
     roi_sub_.subscribe(this, "~/input/rois", rclcpp::QoS{1}.get_rmw_qos_profile());
   }
