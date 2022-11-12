@@ -48,7 +48,7 @@ TrafficLightTesterNodelet::TrafficLightTesterNodelet(const rclcpp::NodeOptions &
 
   timer_callback_count = 0;
 
-  RCLCPP_INFO(this->get_logger(), "Create traffic ligth classifier node");
+  RCLCPP_INFO(this->get_logger(), "Create traffic light classifier node");
   is_approximate_sync_ = this->declare_parameter("approximate_sync", false);
   if (is_approximate_sync_) {
     approximate_sync_.reset(new ApproximateSync(ApproximateSyncPolicy(10), image_sub_, roi_sub_));
@@ -63,6 +63,30 @@ TrafficLightTesterNodelet::TrafficLightTesterNodelet(const rclcpp::NodeOptions &
   traffic_signal_array_pub_ =
     this->create_publisher<autoware_auto_perception_msgs::msg::TrafficSignalArray>(
       "~/output/traffic_signals", rclcpp::QoS{1});
+
+/**
+ * template<
+  typename MessageT,
+  typename CallbackT,
+  typename AllocatorT,
+  typename CallbackMessageT,
+  typename SubscriptionT,
+  typename MessageMemoryStrategyT>
+std::shared_ptr<SubscriptionT>
+Node::create_subscription(
+  const std::string & topic_name,
+  const rclcpp::QoS & qos,
+  CallbackT && callback,
+  const SubscriptionOptionsWithAllocator<AllocatorT> & options,
+  typename MessageMemoryStrategyT::SharedPtr msg_mem_strat)
+{
+*/
+
+//   sub_rtc_status_ = raw_node_->create_subscription<CooperateStatusArray>(
+//    "/api/external/get/rtc_status", 1, std::bind(&RTCManagerPanel::onRTCStatus, this, _1));
+
+  traffic_signal_array_sub_ = this->create_subscription<autoware_auto_perception_msgs::msg::TrafficSignalArray>(
+      "~/input/traffic_signals", rclcpp::QoS{1}, std::bind(&TrafficLightTesterNodelet::onTrafficSignalArray, this, _1));
 
   using std::chrono_literals::operator""ms;
   timer_ = rclcpp::create_timer(
@@ -79,6 +103,13 @@ TrafficLightTesterNodelet::TrafficLightTesterNodelet(const rclcpp::NodeOptions &
     RCLCPP_ERROR(
       this->get_logger(), "please install CUDA, CUDNN and TensorRT to use cnn classifier");
 #endif
+  }
+}
+
+void TrafficLightTesterNodelet::onTrafficSignalArray(const autoware_auto_perception_msgs::msg::TrafficSignalArray::ConstSharedPtr msg)
+{
+  if (msg) {
+    RCLCPP_INFO(this->get_logger(), "Msg received");
   }
 }
 
