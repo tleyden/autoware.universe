@@ -65,7 +65,7 @@ TrafficLightTesterNodelet::TrafficLightTesterNodelet(const rclcpp::NodeOptions &
       "~/output/traffic_signals", rclcpp::QoS{1});
 
   traffic_signal_array_sub_ = this->create_subscription<autoware_auto_perception_msgs::msg::TrafficSignalArray>(
-      "~/input/traffic_signals", 
+      "~/output/traffic_signals", 
       rclcpp::QoS{1}, 
       std::bind(&TrafficLightTesterNodelet::onTrafficSignalArray, this, _1)
   );
@@ -90,6 +90,7 @@ TrafficLightTesterNodelet::TrafficLightTesterNodelet(const rclcpp::NodeOptions &
 
 void TrafficLightTesterNodelet::onTrafficSignalArray(const autoware_auto_perception_msgs::msg::TrafficSignalArray::ConstSharedPtr msg)
 {
+  RCLCPP_INFO(this->get_logger(), "onTrafficSignalArray() callback");
   if (msg) {
     RCLCPP_INFO(this->get_logger(), "Msg received");
   }
