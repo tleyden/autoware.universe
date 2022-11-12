@@ -65,7 +65,7 @@ TrafficLightTesterNodelet::TrafficLightTesterNodelet(const rclcpp::NodeOptions &
       "~/output/traffic_signals", rclcpp::QoS{1});
 
   traffic_signal_array_sub_ = this->create_subscription<autoware_auto_perception_msgs::msg::TrafficSignalArray>(
-      "~/output/traffic_signals", 
+      "/traffic_light_classifier/traffic_signals", 
       rclcpp::QoS{1}, 
       std::bind(&TrafficLightTesterNodelet::onTrafficSignalArray, this, _1)
   );
