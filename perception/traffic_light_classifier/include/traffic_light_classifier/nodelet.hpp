@@ -61,6 +61,10 @@ public:
   void roisTopicCallback(const autoware_auto_perception_msgs::msg::TrafficLightRoiArray::ConstSharedPtr &
       input_rois_msg);
 
+  void imagesTopicCallback(const sensor_msgs::msg::Image::ConstSharedPtr &
+      image_msg);
+
+
 private:
   enum ClassifierType {
     HSVFilter = 0,
