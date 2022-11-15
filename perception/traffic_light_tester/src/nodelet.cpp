@@ -150,27 +150,21 @@ void TrafficLightTesterNodelet::timerCallback()
     loaded_yaml_file = false;
   }
 
-
-  // std::unique_ptr<char[]> yaml_filename(new char[200]);
-  // snprintf(yaml_filename.get(), 200, "/home/tleyden/Development/autoware/src/universe/autoware.universe/perception/traffic_light_tester/data/%d_metadata.yaml", timer_callback_count);
-  // RCLCPP_INFO(this->get_logger(), "Read ROIs from yaml file");
-
-  // YAML::Node metadata = YAML::LoadFile(yaml_filename.get());
-
-  if (loaded_yaml_file) {
-    RCLCPP_INFO(this->get_logger(), "color code: %d", metadata["expected_signal_color_code"].as<int>());
+  if (!loaded_yaml_file) {
+    return;
   }
 
   // Create and publish ROIS
   std_msgs::msg::Header header_roi{};
   header_roi.stamp = time;
-  header_roi.frame_id = "test_roi";
+  header_roi.frame_id = frame_id.get();
   autoware_auto_perception_msgs::msg::TrafficLightRoiArray rois_array{};
   sensor_msgs::msg::RegionOfInterest roi;
-  roi.x_offset = 2578; // fake
-  roi.y_offset = 1287; // fake
-  roi.height = 95;  // fake values, just to get things working
-  roi.width = 37; // fake
+  roi.x_offset = metadata["x_offset"].as<int>();
+  roi.y_offset = metadata["y_offset"].as<int>();
+  roi.height = metadata["height"].as<int>();
+  roi.width = metadata["width"].as<int>();
+  RCLCPP_INFO(this->get_logger(), "image #: %d, color code: %d, x_offset: %d, y_offset: %d", timer_callback_count, metadata["expected_signal_color_code"].as<int>(), roi.x_offset, roi.y_offset);
   autoware_auto_perception_msgs::msg::TrafficLightRoi traffic_light_roi;
   traffic_light_roi.roi = roi;
   rois_array.rois.push_back(traffic_light_roi);
