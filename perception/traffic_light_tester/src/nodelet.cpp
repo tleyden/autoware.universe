@@ -60,19 +60,32 @@ TrafficLightTesterNodelet::TrafficLightTesterNodelet(const rclcpp::NodeOptions &
       std::bind(&TrafficLightTesterNodelet::imageRoiCallback, this, _1, _2));
   }
 
+  /*traffic_signal_array_pub_ =
+    this->create_publisher<autoware_auto_perception_msgs::msg::TrafficSignalArray>(
+      "~/output/traffic_signals", rclcpp::QoS{1}); */
+
+  auto qos = rclcpp::QoS{1}.reliable();
+
   traffic_signal_array_pub_ =
     this->create_publisher<autoware_auto_perception_msgs::msg::TrafficSignalArray>(
-      "~/output/traffic_signals", rclcpp::QoS{1});
+      "~/output/traffic_signals", qos);
+
+
+  // test_image_pub_ = this->create_publisher<sensor_msgs::image_encodings::BGR8>(
+  //   "/traffic_light_classifier/test_images", qos);
+
+  // TODO: how to specify qos?  maybe doesn't matter, looks like it's reliable by default
+  test_image_pub_ = image_transport::create_publisher(this, "/traffic_light_classifier/test_images");  
 
   traffic_signal_array_sub_ = this->create_subscription<autoware_auto_perception_msgs::msg::TrafficSignalArray>(
       "/traffic_light_classifier/traffic_signals", 
-      rclcpp::QoS{1}, 
+      qos, 
       std::bind(&TrafficLightTesterNodelet::onTrafficSignalArray, this, _1)
   );
 
   using std::chrono_literals::operator""ms;
   timer_ = rclcpp::create_timer(
-    this, get_clock(), 100ms, std::bind(&TrafficLightTesterNodelet::connectCb, this));
+    this, get_clock(), 100ms, std::bind(&TrafficLightTesterNodelet::timerCallback, this));
 
   int classifier_type = this->declare_parameter(
     "classifier_type", static_cast<int>(TrafficLightTesterNodelet::ClassifierType::HSVFilter));
@@ -96,33 +109,86 @@ void TrafficLightTesterNodelet::onTrafficSignalArray(const autoware_auto_percept
   }
 }
 
-void TrafficLightTesterNodelet::connectCb()
+void TrafficLightTesterNodelet::timerCallback()
 {
 
-  RCLCPP_INFO(this->get_logger(), "timer_callback_count:: %d", timer_callback_count);
+  RCLCPP_INFO(this->get_logger(), "timer_callback_count: %d", timer_callback_count);
   timer_callback_count += 1;
 
-  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+  // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
-  // Every timer callback, publish an empty traffic signal
+  // Load image file
+  RCLCPP_INFO(this->get_logger(), "loading image");
+  cv::Mat image = cv::imread("/home/tleyden/Development/autoware/src/universe/autoware.universe/perception/traffic_light_tester/data/1.jpg");
+  if (image.empty()) {
+    RCLCPP_INFO(this->get_logger(), "failed to load image");
+  } else {
+      RCLCPP_INFO(this->get_logger(), "loaded image");
+  }
+
+
+  rclcpp::Time time = rclcpp::Clock().now();
+  std_msgs::msg::Header header{};
+  header.stamp = time;
+  header.frame_id = "test_image";
+
+  cv_bridge::CvImage cv_img{header, sensor_msgs::image_encodings::BGR8, image};
+
+
+  // cv_bridge::CvImagePtr cv_ptr(&cv_img);
+
+  // // cv_bridge::CvImagePtr cv_image_ptr;
+
+
+  // // rclcpp::Time time = rclcpp::Time::now();
+
+  // RCLCPP_INFO(this->get_logger(), "create time");
+  
+
+  // RCLCPP_INFO(this->get_logger(), "create cv_image_ptr");
+
+  // // cv_image_ptr->encoding = "bgr8";
+  // cv_image_ptr->encoding = sensor_msgs::image_encodings::BGR8;
+  // RCLCPP_INFO(this->get_logger(), "header.stamp");
+  // cv_image_ptr->header.stamp = time;
+  // RCLCPP_INFO(this->get_logger(), "header.frame id");
+  // cv_image_ptr->header.frame_id = "test_image";
+
+
+  // RCLCPP_INFO(this->get_logger(), "cv_image_ptr image");
+
+  // cv_image_ptr->image = image;
+
+  RCLCPP_INFO(this->get_logger(), "publish image");
+
+  // test_image_pub_.publish(cv_image_ptr->toImageMsg());
+
+  test_image_pub_.publish(cv_img.toImageMsg());
+
+  RCLCPP_INFO(this->get_logger(), "published image");
+
+
+  // Publish it to an image topic
+
+  
+
+  // Load ROIs file (or use a hardcoded hashmap)
+
+
+  // Call model - we would need all those cuda libraries
+
+
+  // Print out results
+
+
+  // Every timer callback, publish an empty traffic signal.  Just an experiment
+  // to see if publishing woould work.
   autoware_auto_perception_msgs::msg::TrafficSignalArray output_msg;
   autoware_auto_perception_msgs::msg::TrafficSignal traffic_signal;
   output_msg.signals.push_back(traffic_signal);
   traffic_signal_array_pub_->publish(output_msg);
 
 
-  // // set callbacks only when there are subscribers to this node
-  // if (
-  //   traffic_signal_array_pub_->get_subscription_count() == 0 &&
-  //   traffic_signal_array_pub_->get_intra_process_subscription_count() == 0) {
-  //   image_sub_.unsubscribe();
-  //   roi_sub_.unsubscribe();
-  //   // RCLCPP_INFO(this->get_logger(), "Not subscribing to any upstream topics, nobody subscribed to us.");
-  // } else if (!image_sub_.getSubscriber()) {
-  //   // RCLCPP_INFO(this->get_logger(), "Subscribing to any upstream topics, we have a subscriber.");
-  //   image_sub_.subscribe(this, "~/input/image", "raw", rmw_qos_profile_sensor_data);
-  //   roi_sub_.subscribe(this, "~/input/rois", rclcpp::QoS{1}.get_rmw_qos_profile());
-  // }
 }
 
 void TrafficLightTesterNodelet::imageRoiCallback(

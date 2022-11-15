@@ -58,7 +58,7 @@ private:
     HSVFilter = 0,
     CNN = 1,
   };
-  void connectCb();
+  void timerCallback();
 
   void onTrafficSignalArray(const autoware_auto_perception_msgs::msg::TrafficSignalArray::ConstSharedPtr msg);
 
@@ -83,6 +83,8 @@ private:
 
   rclcpp::Subscription<autoware_auto_perception_msgs::msg::TrafficSignalArray>::SharedPtr
     traffic_signal_array_sub_;
+
+  image_transport::Publisher test_image_pub_;
 
   std::shared_ptr<ClassifierInterface> classifier_ptr_;
 

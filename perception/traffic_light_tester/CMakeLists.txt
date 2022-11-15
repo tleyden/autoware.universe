@@ -16,14 +16,6 @@ include_directories(
   ${CUDA_INCLUDE_DIRS}
 )
 
-# ament_auto_add_library(libutils SHARED
-#   utils/trt_common.cpp
-# )
-# target_link_libraries(libutils
-#   ${OpenCV_LIBRARIES}
-#   stdc++fs
-# )
-
 ament_auto_add_library(traffic_light_tester_nodelet SHARED
   src/nodelet.cpp
 )
