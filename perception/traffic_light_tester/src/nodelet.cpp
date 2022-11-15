@@ -71,10 +71,10 @@ TrafficLightTesterNodelet::TrafficLightTesterNodelet(const rclcpp::NodeOptions &
       "~/output/traffic_signals", qos);
 
   roi_array_pub_ = this->create_publisher<autoware_auto_perception_msgs::msg::TrafficLightRoiArray>(
-      "/perception/traffic_light_recognition/rois", qos);
+      "/traffic_light_classifier/rois", qos);
 
   // TODO: how to specify qos?  maybe doesn't matter, looks like it's reliable by default
-  test_image_pub_ = image_transport::create_publisher(this, "/sensing/camera/traffic_light/image_raw");  
+  test_image_pub_ = image_transport::create_publisher(this, "/traffic_light_classifier/image_raw");  
 
   traffic_signal_array_sub_ = this->create_subscription<autoware_auto_perception_msgs::msg::TrafficSignalArray>(
       "/traffic_light_classifier/traffic_signals", 

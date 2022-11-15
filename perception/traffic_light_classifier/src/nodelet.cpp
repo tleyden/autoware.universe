@@ -26,17 +26,33 @@ TrafficLightClassifierNodelet::TrafficLightClassifierNodelet(const rclcpp::NodeO
   using std::placeholders::_1;
   using std::placeholders::_2;
   
-  RCLCPP_INFO(this->get_logger(), "Create traffic ligth classifier node");
-  is_approximate_sync_ = this->declare_parameter("approximate_sync", false);
-  if (is_approximate_sync_) {
-    approximate_sync_.reset(new ApproximateSync(ApproximateSyncPolicy(10), image_sub_, roi_sub_));
-    approximate_sync_->registerCallback(
-      std::bind(&TrafficLightClassifierNodelet::imageRoiCallback, this, _1, _2));
-  } else {
-    sync_.reset(new Sync(SyncPolicy(10), image_sub_, roi_sub_));
-    sync_->registerCallback(
-      std::bind(&TrafficLightClassifierNodelet::imageRoiCallback, this, _1, _2));
-  }
+  RCLCPP_INFO(this->get_logger(), "Create traffic light classifier node");
+  
+  // // act of desperation, set is_approximate_sync_ to true 
+  // // is_approximate_sync_ = this->declare_parameter("approximate_sync", false);
+  // is_approximate_sync_ = true;
+  
+  // if (is_approximate_sync_) {
+  //   RCLCPP_INFO(this->get_logger(), "Use approximate sync mode");
+  //   approximate_sync_.reset(new ApproximateSync(ApproximateSyncPolicy(10), image_sub_, roi_sub_));
+  //   approximate_sync_->registerCallback(
+  //     std::bind(&TrafficLightClassifierNodelet::imageRoiCallback, this, _1, _2));
+  // } else {
+  //   sync_.reset(new Sync(SyncPolicy(10), image_sub_, roi_sub_));
+  //   sync_->registerCallback(
+  //     std::bind(&TrafficLightClassifierNodelet::imageRoiCallback, this, _1, _2));
+  // }
+
+  // image_sub_.subscribe(this, "/traffic_light_classifier/image_raw", )
+  // auto qos = rclcpp::QoS{1}.reliable();
+
+  // this didn't work, gave compiler error.  tried a different approach that matched existing file
+  // roi_sub_ = this->create_subscription<autoware_auto_perception_msgs::msg::TrafficLightRoiArray>("/traffic_light_classifier/rois", qos, std::bind(&TrafficLightClassifierNodelet::roisTopicCallback, this, _1));
+  roi_sub_.registerCallback(std::bind(&TrafficLightClassifierNodelet::roisTopicCallback, this, _1));
+
+  // image_sub_
+  
+
 
   traffic_signal_array_pub_ =
     this->create_publisher<autoware_auto_perception_msgs::msg::TrafficSignalArray>(
@@ -74,7 +90,17 @@ void TrafficLightClassifierNodelet::connectCb()
   } else if (!image_sub_.getSubscriber()) {
     RCLCPP_INFO(this->get_logger(), "Subscribing to any upstream topics, we have a subscriber");
     image_sub_.subscribe(this, "~/input/image", "raw", rmw_qos_profile_sensor_data);
-    roi_sub_.subscribe(this, "~/input/rois", rclcpp::QoS{1}.get_rmw_qos_profile());
+    // roi_sub_.subscribe(this, "~/input/rois", rclcpp::QoS{1}.get_rmw_qos_profile());
+    roi_sub_.subscribe(this, "/traffic_light_classifier/rois", rclcpp::QoS{1}.get_rmw_qos_profile());
+  }
+}
+
+void TrafficLightClassifierNodelet::roisTopicCallback(
+  const autoware_auto_perception_msgs::msg::TrafficLightRoiArray::ConstSharedPtr & input_rois_msg)
+{
+  RCLCPP_INFO(this->get_logger(), "roisTopicCallback invoked");
+  if (input_rois_msg->rois.size() > 0) {
+    RCLCPP_INFO(this->get_logger(), "rois.size() > 0");
   }
 }
 
