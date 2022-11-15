@@ -70,12 +70,11 @@ TrafficLightTesterNodelet::TrafficLightTesterNodelet(const rclcpp::NodeOptions &
     this->create_publisher<autoware_auto_perception_msgs::msg::TrafficSignalArray>(
       "~/output/traffic_signals", qos);
 
-
-  // test_image_pub_ = this->create_publisher<sensor_msgs::image_encodings::BGR8>(
-  //   "/traffic_light_classifier/test_images", qos);
+  roi_array_pub_ = this->create_publisher<autoware_auto_perception_msgs::msg::TrafficLightRoiArray>(
+      "/perception/traffic_light_recognition/rois", qos);
 
   // TODO: how to specify qos?  maybe doesn't matter, looks like it's reliable by default
-  test_image_pub_ = image_transport::create_publisher(this, "/traffic_light_classifier/test_images");  
+  test_image_pub_ = image_transport::create_publisher(this, "/sensing/camera/traffic_light/image_raw");  
 
   traffic_signal_array_sub_ = this->create_subscription<autoware_auto_perception_msgs::msg::TrafficSignalArray>(
       "/traffic_light_classifier/traffic_signals", 
@@ -131,10 +130,35 @@ void TrafficLightTesterNodelet::timerCallback()
   cv_bridge::CvImage cv_img{header, sensor_msgs::image_encodings::BGR8, image};
   test_image_pub_.publish(cv_img.toImageMsg());
 
-  // Publish it to an image topic
 
 
   // Load ROIs file (or use a hardcoded hashmap)
+    // const sensor_msgs::msg::RegionOfInterest & roi = input_rois_msg->rois.at(i).roi;
+    // cv::Mat clipped_image(
+    //   cv_ptr->image, cv::Rect(roi.x_offset, roi.y_offset, roi.width, roi.height));
+    //   const autoware_auto_perception_msgs::msg::TrafficLightRoiArray::ConstSharedPtr & input_rois_msg
+
+
+
+  // TODO: figure out why this isn't working.  Look at traffic_light_ssd_fine_detector for an example of publishing a TrafficLightRoiArray
+  std_msgs::msg::Header header_roi{};
+  header_roi.stamp = time;
+  header_roi.frame_id = "test_roi";
+  autoware_auto_perception_msgs::msg::TrafficLightRoiArray rois_array;
+  sensor_msgs::msg::RegionOfInterest roi;
+  roi.x_offset = 0; // fake
+  roi.y_offset = 0; // fake
+  roi.height = 10;  // fake values, just to get things working
+  roi.width = 10; // fake
+  autoware_auto_perception_msgs::msg::TrafficLightRoi traffic_light_roi;
+  traffic_light_roi.roi = roi;
+  rois_array.rois.push_back(traffic_light_roi);
+  rois_array.header = header_roi;
+
+  // auto rois_array_ptr = std::make_unique<autoware_auto_perception_msgs::msg::TrafficLightRoiArray>(rois_array);
+
+  roi_array_pub_->publish(rois_array);
+
 
 
   // Call model - we would need all those cuda libraries

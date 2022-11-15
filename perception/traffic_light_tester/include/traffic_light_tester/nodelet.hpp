@@ -86,6 +86,9 @@ private:
 
   image_transport::Publisher test_image_pub_;
 
+  rclcpp::Publisher<autoware_auto_perception_msgs::msg::TrafficLightRoiArray>::SharedPtr
+      roi_array_pub_;
+
   std::shared_ptr<ClassifierInterface> classifier_ptr_;
 
   int timer_callback_count;
