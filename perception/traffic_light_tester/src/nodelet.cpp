@@ -19,6 +19,7 @@
 #include <vector>
 #include <thread>
 #include <chrono>
+#include <yaml-cpp/yaml.h>
 
 /**
  * This is a helper thing to test out how well the traffic light cnn detector
@@ -116,35 +117,55 @@ void TrafficLightTesterNodelet::timerCallback()
 
   // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
+
   // Load image file
   cv::Mat image = cv::imread("/home/tleyden/Development/autoware/src/universe/autoware.universe/perception/traffic_light_tester/data/1.jpg");
   if (image.empty()) {
     RCLCPP_INFO(this->get_logger(), "failed to load image");
-  } 
+  }
+  
 
   // PUblish image
   rclcpp::Time time = rclcpp::Clock().now();
   std_msgs::msg::Header header{};
   header.stamp = time;
-  header.frame_id = "test_image";
+  std::unique_ptr<char[]> frame_id(new char[100]);
+  snprintf(frame_id.get(), 100, "test_image_%d", timer_callback_count);
+  header.frame_id = frame_id.get();
   cv_bridge::CvImage cv_img{header, sensor_msgs::image_encodings::BGR8, image};
   test_image_pub_.publish(cv_img.toImageMsg());
 
+  // Read ROIs from yaml file
+  bool loaded_yaml_file = false;
+  YAML::Node metadata;
+  std::unique_ptr<char[]> yaml_filename(new char[200]);
+  snprintf(yaml_filename.get(), 200, "/home/tleyden/Development/autoware/src/universe/autoware.universe/perception/traffic_light_tester/data/%d_metadata.yaml", timer_callback_count);
+  
+  try {
+    RCLCPP_INFO(this->get_logger(), "Read ROIs from yaml file");
+    metadata = YAML::LoadFile(yaml_filename.get());
+    loaded_yaml_file = true;
+  } catch(YAML::BadFile & e) {
+    RCLCPP_INFO(this->get_logger(), "Could not load yaml file: %s", yaml_filename.get());
+    loaded_yaml_file = false;
+  }
 
 
-  // Load ROIs file (or use a hardcoded hashmap)
-    // const sensor_msgs::msg::RegionOfInterest & roi = input_rois_msg->rois.at(i).roi;
-    // cv::Mat clipped_image(
-    //   cv_ptr->image, cv::Rect(roi.x_offset, roi.y_offset, roi.width, roi.height));
-    //   const autoware_auto_perception_msgs::msg::TrafficLightRoiArray::ConstSharedPtr & input_rois_msg
+  // std::unique_ptr<char[]> yaml_filename(new char[200]);
+  // snprintf(yaml_filename.get(), 200, "/home/tleyden/Development/autoware/src/universe/autoware.universe/perception/traffic_light_tester/data/%d_metadata.yaml", timer_callback_count);
+  // RCLCPP_INFO(this->get_logger(), "Read ROIs from yaml file");
 
+  // YAML::Node metadata = YAML::LoadFile(yaml_filename.get());
 
+  if (loaded_yaml_file) {
+    RCLCPP_INFO(this->get_logger(), "color code: %d", metadata["expected_signal_color_code"].as<int>());
+  }
 
-  // TODO: figure out why this isn't working.  Look at traffic_light_ssd_fine_detector for an example of publishing a TrafficLightRoiArray
+  // Create and publish ROIS
   std_msgs::msg::Header header_roi{};
   header_roi.stamp = time;
   header_roi.frame_id = "test_roi";
-  autoware_auto_perception_msgs::msg::TrafficLightRoiArray rois_array;
+  autoware_auto_perception_msgs::msg::TrafficLightRoiArray rois_array{};
   sensor_msgs::msg::RegionOfInterest roi;
   roi.x_offset = 2578; // fake
   roi.y_offset = 1287; // fake
@@ -154,25 +175,14 @@ void TrafficLightTesterNodelet::timerCallback()
   traffic_light_roi.roi = roi;
   rois_array.rois.push_back(traffic_light_roi);
   rois_array.header = header_roi;
-
-  // auto rois_array_ptr = std::make_unique<autoware_auto_perception_msgs::msg::TrafficLightRoiArray>(rois_array);
-
   roi_array_pub_->publish(rois_array);
-
-
-
-  // Call model - we would need all those cuda libraries
-
-
-  // Print out results
-
 
   // Every timer callback, publish an empty traffic signal.  Just an experiment
   // to see if publishing woould work.
-  autoware_auto_perception_msgs::msg::TrafficSignalArray output_msg;
-  autoware_auto_perception_msgs::msg::TrafficSignal traffic_signal;
-  output_msg.signals.push_back(traffic_signal);
-  traffic_signal_array_pub_->publish(output_msg);
+  // autoware_auto_perception_msgs::msg::TrafficSignalArray output_msg;
+  // autoware_auto_perception_msgs::msg::TrafficSignal traffic_signal;
+  // output_msg.signals.push_back(traffic_signal);
+  // traffic_signal_array_pub_->publish(output_msg);
 
 
 }
