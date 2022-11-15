@@ -146,10 +146,10 @@ void TrafficLightTesterNodelet::timerCallback()
   header_roi.frame_id = "test_roi";
   autoware_auto_perception_msgs::msg::TrafficLightRoiArray rois_array;
   sensor_msgs::msg::RegionOfInterest roi;
-  roi.x_offset = 0; // fake
-  roi.y_offset = 0; // fake
-  roi.height = 10;  // fake values, just to get things working
-  roi.width = 10; // fake
+  roi.x_offset = 2578; // fake
+  roi.y_offset = 1287; // fake
+  roi.height = 95;  // fake values, just to get things working
+  roi.width = 37; // fake
   autoware_auto_perception_msgs::msg::TrafficLightRoi traffic_light_roi;
   traffic_light_roi.roi = roi;
   rois_array.rois.push_back(traffic_light_roi);
