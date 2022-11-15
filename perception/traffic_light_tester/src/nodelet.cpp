@@ -103,9 +103,48 @@ TrafficLightTesterNodelet::TrafficLightTesterNodelet(const rclcpp::NodeOptions &
 
 void TrafficLightTesterNodelet::onTrafficSignalArray(const autoware_auto_perception_msgs::msg::TrafficSignalArray::ConstSharedPtr msg)
 {
-  RCLCPP_INFO(this->get_logger(), "onTrafficSignalArray() callback");
   if (msg) {
-    RCLCPP_INFO(this->get_logger(), "Msg received");
+    auto frame_id = msg.get()->header.frame_id;
+    RCLCPP_INFO(this->get_logger(), "Msg received with frame id: %s", frame_id.c_str());
+    // Read ROIs from yaml file
+    bool loaded_yaml_file = false;
+    YAML::Node metadata;
+
+    std::unique_ptr<char[]> yaml_filename(new char[200]);
+    snprintf(yaml_filename.get(), 200, "/home/tleyden/Development/autoware/src/universe/autoware.universe/perception/traffic_light_tester/data/%s_metadata.yaml", frame_id.c_str());
+    
+    try {
+      metadata = YAML::LoadFile(yaml_filename.get());
+      loaded_yaml_file = true;
+    } catch(YAML::BadFile & e) {
+      RCLCPP_INFO(this->get_logger(), "Could not load yaml file: %s", yaml_filename.get());
+      loaded_yaml_file = false;
+    }
+
+    if (!loaded_yaml_file) {
+      return;
+    }
+
+    // Now we know the expected label 
+    auto expected_signal_color_code = metadata["expected_signal_color_code"].as<int>();
+    if (msg.get()->signals.size() > 1) {
+      RCLCPP_ERROR(this->get_logger(), "Expected 1 signal, got: %ld", msg.get()->signals.size());
+      return;
+    }
+
+    auto traffic_signal = msg.get()->signals[0];
+    if (traffic_signal.lights.size() > 1) {
+      RCLCPP_ERROR(this->get_logger(), "Expected 1 light, got: %ld", traffic_signal.lights.size());
+      return;
+    }
+
+    auto traffic_signal_light = traffic_signal.lights[0];
+    if (traffic_signal_light.color == expected_signal_color_code) {
+      RCLCPP_INFO(this->get_logger(), "Success!  Got expected color code: %d", expected_signal_color_code);
+    } else {
+      RCLCPP_INFO(this->get_logger(), "Failure.  Did not get expected color code: %d, got: %d", expected_signal_color_code, traffic_signal_light.color);
+    }
+
   }
 }
 
@@ -119,19 +158,18 @@ void TrafficLightTesterNodelet::timerCallback()
   std::unique_ptr<char[]> img_filename(new char[200]);
   snprintf(img_filename.get(), 200, "/home/tleyden/Development/autoware/src/universe/autoware.universe/perception/traffic_light_tester/data/%d.jpg", timer_callback_count);
 
-
   cv::Mat image = cv::imread(img_filename.get());
   if (image.empty()) {
     RCLCPP_INFO(this->get_logger(), "Failed to load image: %s", img_filename.get());
     return;
   }
   
-  // PUblish image
+  // Publish image
   rclcpp::Time time = rclcpp::Clock().now();
   std_msgs::msg::Header header{};
   header.stamp = time;
   std::unique_ptr<char[]> frame_id(new char[100]);
-  snprintf(frame_id.get(), 100, "test_image_%d", timer_callback_count);
+  snprintf(frame_id.get(), 100, "%d", timer_callback_count);
   header.frame_id = frame_id.get();
   cv_bridge::CvImage cv_img{header, sensor_msgs::image_encodings::BGR8, image};
   test_image_pub_.publish(cv_img.toImageMsg());
