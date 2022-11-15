@@ -115,16 +115,17 @@ void TrafficLightTesterNodelet::timerCallback()
   RCLCPP_INFO(this->get_logger(), "timer_callback_count: %d", timer_callback_count);
   timer_callback_count += 1;
 
-  // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
-
   // Load image file
-  cv::Mat image = cv::imread("/home/tleyden/Development/autoware/src/universe/autoware.universe/perception/traffic_light_tester/data/1.jpg");
+  std::unique_ptr<char[]> img_filename(new char[200]);
+  snprintf(img_filename.get(), 200, "/home/tleyden/Development/autoware/src/universe/autoware.universe/perception/traffic_light_tester/data/%d.jpg", timer_callback_count);
+
+
+  cv::Mat image = cv::imread(img_filename.get());
   if (image.empty()) {
-    RCLCPP_INFO(this->get_logger(), "failed to load image");
+    RCLCPP_INFO(this->get_logger(), "Failed to load image: %s", img_filename.get());
+    return;
   }
   
-
   // PUblish image
   rclcpp::Time time = rclcpp::Clock().now();
   std_msgs::msg::Header header{};
@@ -170,14 +171,6 @@ void TrafficLightTesterNodelet::timerCallback()
   rois_array.rois.push_back(traffic_light_roi);
   rois_array.header = header_roi;
   roi_array_pub_->publish(rois_array);
-
-  // Every timer callback, publish an empty traffic signal.  Just an experiment
-  // to see if publishing woould work.
-  // autoware_auto_perception_msgs::msg::TrafficSignalArray output_msg;
-  // autoware_auto_perception_msgs::msg::TrafficSignal traffic_signal;
-  // output_msg.signals.push_back(traffic_signal);
-  // traffic_signal_array_pub_->publish(output_msg);
-
 
 }
 
