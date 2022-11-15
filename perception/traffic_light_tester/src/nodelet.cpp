@@ -118,59 +118,21 @@ void TrafficLightTesterNodelet::timerCallback()
   // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
   // Load image file
-  RCLCPP_INFO(this->get_logger(), "loading image");
   cv::Mat image = cv::imread("/home/tleyden/Development/autoware/src/universe/autoware.universe/perception/traffic_light_tester/data/1.jpg");
   if (image.empty()) {
     RCLCPP_INFO(this->get_logger(), "failed to load image");
-  } else {
-      RCLCPP_INFO(this->get_logger(), "loaded image");
-  }
+  } 
 
-
+  // PUblish image
   rclcpp::Time time = rclcpp::Clock().now();
   std_msgs::msg::Header header{};
   header.stamp = time;
   header.frame_id = "test_image";
-
   cv_bridge::CvImage cv_img{header, sensor_msgs::image_encodings::BGR8, image};
-
-
-  // cv_bridge::CvImagePtr cv_ptr(&cv_img);
-
-  // // cv_bridge::CvImagePtr cv_image_ptr;
-
-
-  // // rclcpp::Time time = rclcpp::Time::now();
-
-  // RCLCPP_INFO(this->get_logger(), "create time");
-  
-
-  // RCLCPP_INFO(this->get_logger(), "create cv_image_ptr");
-
-  // // cv_image_ptr->encoding = "bgr8";
-  // cv_image_ptr->encoding = sensor_msgs::image_encodings::BGR8;
-  // RCLCPP_INFO(this->get_logger(), "header.stamp");
-  // cv_image_ptr->header.stamp = time;
-  // RCLCPP_INFO(this->get_logger(), "header.frame id");
-  // cv_image_ptr->header.frame_id = "test_image";
-
-
-  // RCLCPP_INFO(this->get_logger(), "cv_image_ptr image");
-
-  // cv_image_ptr->image = image;
-
-  RCLCPP_INFO(this->get_logger(), "publish image");
-
-  // test_image_pub_.publish(cv_image_ptr->toImageMsg());
-
   test_image_pub_.publish(cv_img.toImageMsg());
-
-  RCLCPP_INFO(this->get_logger(), "published image");
-
 
   // Publish it to an image topic
 
-  
 
   // Load ROIs file (or use a hardcoded hashmap)
 
