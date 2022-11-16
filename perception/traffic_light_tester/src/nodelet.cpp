@@ -140,9 +140,9 @@ void TrafficLightTesterNodelet::onTrafficSignalArray(const autoware_auto_percept
 
     auto traffic_signal_light = traffic_signal.lights[0];
     if (traffic_signal_light.color == expected_signal_color_code) {
-      RCLCPP_INFO(this->get_logger(), "Success!  Got expected color code: %d", expected_signal_color_code);
+      RCLCPP_INFO(this->get_logger(), "Success!  Frame id: %s got expected color code: %d", frame_id.c_str(), expected_signal_color_code);
     } else {
-      RCLCPP_INFO(this->get_logger(), "Failure.  Did not get expected color code: %d, got: %d", expected_signal_color_code, traffic_signal_light.color);
+      RCLCPP_INFO(this->get_logger(), "Failure.  Frame id: %s did not get expected color code: %d, got: %d", frame_id.c_str(), expected_signal_color_code, traffic_signal_light.color);
     }
 
   }
@@ -153,6 +153,11 @@ void TrafficLightTesterNodelet::timerCallback()
 
   RCLCPP_INFO(this->get_logger(), "timer_callback_count: %d", timer_callback_count);
   timer_callback_count += 1;
+
+  // Publish each image roi pair 100 times
+  auto frame_counter = (timer_callback_count / 100) + 1;
+  RCLCPP_INFO(this->get_logger(), "frame_counter: %ld", frame_counter);
+
 
   // Load image file
   std::unique_ptr<char[]> img_filename(new char[200]);
@@ -203,7 +208,7 @@ void TrafficLightTesterNodelet::timerCallback()
   roi.y_offset = metadata["y_offset"].as<int>();
   roi.height = metadata["height"].as<int>();
   roi.width = metadata["width"].as<int>();
-  RCLCPP_INFO(this->get_logger(), "image #: %d, color code: %d, x_offset: %d, y_offset: %d", timer_callback_count, metadata["expected_signal_color_code"].as<int>(), roi.x_offset, roi.y_offset);
+  RCLCPP_INFO(this->get_logger(), "Publish frame id: %s, color code: %d, x_offset: %d, y_offset: %d", frame_id.get(), metadata["expected_signal_color_code"].as<int>(), roi.x_offset, roi.y_offset);
   autoware_auto_perception_msgs::msg::TrafficLightRoi traffic_light_roi;
   traffic_light_roi.roi = roi;
   rois_array.rois.push_back(traffic_light_roi);
