@@ -154,9 +154,9 @@ void TrafficLightTesterNodelet::timerCallback()
   RCLCPP_INFO(this->get_logger(), "timer_callback_count: %d", timer_callback_count);
   timer_callback_count += 1;
 
-  // Publish each image roi pair 25 times before moving onto the next one.  This gives plenty
+  // Publish each image roi pair X times before moving onto the next one.  This gives plenty
   // of time for the subscriber to keep up.
-  auto frame_counter = (timer_callback_count / 25) + 1;
+  auto frame_counter = (timer_callback_count / 10) + 1;
   RCLCPP_INFO(this->get_logger(), "frame_counter: %d", frame_counter);
 
 
