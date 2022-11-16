@@ -140,9 +140,9 @@ void TrafficLightTesterNodelet::onTrafficSignalArray(const autoware_auto_percept
 
     auto traffic_signal_light = traffic_signal.lights[0];
     if (traffic_signal_light.color == expected_signal_color_code) {
-      RCLCPP_INFO(this->get_logger(), "Success!  Frame id: %s got expected color code: %d", frame_id.c_str(), expected_signal_color_code);
+      RCLCPP_INFO(this->get_logger(), "Result==Success!  Frame id: %s got expected color code: %d", frame_id.c_str(), expected_signal_color_code);
     } else {
-      RCLCPP_INFO(this->get_logger(), "Failure.  Frame id: %s did not get expected color code: %d, got: %d", frame_id.c_str(), expected_signal_color_code, traffic_signal_light.color);
+      RCLCPP_INFO(this->get_logger(), "Result==Failure.  Frame id: %s did not get expected color code: %d, got: %d", frame_id.c_str(), expected_signal_color_code, traffic_signal_light.color);
     }
 
   }
@@ -154,14 +154,15 @@ void TrafficLightTesterNodelet::timerCallback()
   RCLCPP_INFO(this->get_logger(), "timer_callback_count: %d", timer_callback_count);
   timer_callback_count += 1;
 
-  // Publish each image roi pair 100 times
-  auto frame_counter = (timer_callback_count / 100) + 1;
-  RCLCPP_INFO(this->get_logger(), "frame_counter: %ld", frame_counter);
+  // Publish each image roi pair 25 times before moving onto the next one.  This gives plenty
+  // of time for the subscriber to keep up.
+  auto frame_counter = (timer_callback_count / 25) + 1;
+  RCLCPP_INFO(this->get_logger(), "frame_counter: %d", frame_counter);
 
 
   // Load image file
   std::unique_ptr<char[]> img_filename(new char[200]);
-  snprintf(img_filename.get(), 200, "/home/tleyden/Development/autoware/src/universe/autoware.universe/perception/traffic_light_tester/data/%d.jpg", timer_callback_count);
+  snprintf(img_filename.get(), 200, "/home/tleyden/Development/autoware/src/universe/autoware.universe/perception/traffic_light_tester/data/%d.jpg", frame_counter);
 
   cv::Mat image = cv::imread(img_filename.get());
   if (image.empty()) {
@@ -174,7 +175,7 @@ void TrafficLightTesterNodelet::timerCallback()
   std_msgs::msg::Header header{};
   header.stamp = time;
   std::unique_ptr<char[]> frame_id(new char[100]);
-  snprintf(frame_id.get(), 100, "%d", timer_callback_count);
+  snprintf(frame_id.get(), 100, "%d", frame_counter);
   header.frame_id = frame_id.get();
   cv_bridge::CvImage cv_img{header, sensor_msgs::image_encodings::BGR8, image};
   test_image_pub_.publish(cv_img.toImageMsg());
@@ -183,7 +184,7 @@ void TrafficLightTesterNodelet::timerCallback()
   bool loaded_yaml_file = false;
   YAML::Node metadata;
   std::unique_ptr<char[]> yaml_filename(new char[200]);
-  snprintf(yaml_filename.get(), 200, "/home/tleyden/Development/autoware/src/universe/autoware.universe/perception/traffic_light_tester/data/%d_metadata.yaml", timer_callback_count);
+  snprintf(yaml_filename.get(), 200, "/home/tleyden/Development/autoware/src/universe/autoware.universe/perception/traffic_light_tester/data/%d_metadata.yaml", frame_counter);
   
   try {
     RCLCPP_INFO(this->get_logger(), "Read ROIs from yaml file");
